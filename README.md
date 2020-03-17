@@ -27,6 +27,24 @@ The LAMA probe is described in the following paper:
 }
 ```
 
+##########################
+This repository contains the code of group project for the 2020 WINTER NLP CSE517 CLASS
+It includes two new features: 
+1. Run each model in their original vocabulary:
+To achieve this, change the argument in the ./scripts/run_experiments.py  
+From "common_vocab_filename": "pre-trained_language_models/common_vocab_cased.txt" to 
+"common_vocab_filename": "pre-trained_language_models/common_vocab_cased_unfiltered.txt"
+
+2. Evaluate Roberta on Google-RE, T-REx, ConceptNet and SQuAD
+The modifications are alreay made in the download_models.sh, ./scripts/run_experiments.py,
+./scripts/batch_eval_KB_completion.py
+and ./lama/modules/roberta_connector.py. Simply follow the steps in the orginal
+README and the Roberta experiments will be done.
+
+##########################
+
+
+
 ## The LAMA probe
 
 To reproduce our results:

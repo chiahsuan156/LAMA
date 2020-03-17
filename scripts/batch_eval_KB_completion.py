@@ -68,17 +68,17 @@ def init_logging(log_directory):
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    # file handler
-    fh = logging.FileHandler(str(log_directory) + "/info.log")
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
+#     # file handler
+#     fh = logging.FileHandler(str(log_directory) + "/info.log")
+#     fh.setLevel(logging.DEBUG)
+#     fh.setFormatter(formatter)
 
     # console handler
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(logging.WARNING)
     ch.setFormatter(formatter)
 
-    logger.addHandler(fh)
+#     logger.addHandler(fh)
     logger.addHandler(ch)
 
     logger.propagate = False
@@ -189,8 +189,7 @@ def run_thread_negated(arguments):
         arguments["log_probs_negated"],
         arguments["masked_indices_negated"],
         arguments["vocab"],
-        index_list=arguments["index_list"],
-    )
+        index_list=arguments["index_list"])
 
     msg += "\n" + return_msg
 
@@ -379,9 +378,7 @@ def main(args, shuffle_data=True, model=None):
     if args.lowercase:
         # lowercase all samples
         logger.info("lowercasing all samples...")
-        all_samples = lowercase_samples(
-            data, use_negated_probes=args.use_negated_probes
-        )
+        all_samples = lowercase_samples(data, use_negated_probes=args.use_negated_probes)
     else:
         # keep samples as they are
         all_samples = data
@@ -421,6 +418,8 @@ def main(args, shuffle_data=True, model=None):
             sample["masked_sentences"] = parse_template(
                 args.template.strip(), sample["sub_label"].strip(), base.MASK
             )
+            # substitute all negated sentences with a standard template
+            
             if args.use_negated_probes:
                 # substitute all negated sentences with a standard template
                 sample["negated"] = parse_template(
@@ -444,9 +443,7 @@ def main(args, shuffle_data=True, model=None):
     samples_batches, sentences_batches, ret_msg = batchify(all_samples, args.batch_size)
     logger.info("\n" + ret_msg + "\n")
     if args.use_negated_probes:
-        sentences_batches_negated, ret_msg = batchify_negated(
-            all_samples, args.batch_size
-        )
+        sentences_batches_negated, ret_msg = batchify_negated(all_samples, args.batch_size)
         logger.info("\n" + ret_msg + "\n")
 
     # ThreadPool
@@ -462,17 +459,17 @@ def main(args, shuffle_data=True, model=None):
         samples_b = samples_batches[i]
         sentences_b = sentences_batches[i]
 
-        (
-            original_log_probs_list,
-            token_ids_list,
-            masked_indices_list,
-        ) = model.get_batch_generation(sentences_b, logger=logger)
+        original_log_probs_list, token_ids_list, masked_indices_list = model.get_batch_generation(
+            sentences_b, logger=logger
+        )
+ 
 
         if vocab_subset is not None:
             # filter log_probs
             filtered_log_probs_list = model.filter_logprobs(
                 original_log_probs_list, filter_logprob_indices
             )
+
         else:
             filtered_log_probs_list = original_log_probs_list
 
@@ -522,11 +519,14 @@ def main(args, shuffle_data=True, model=None):
             )
         ]
         # single thread for debug
-        # for isx,a in enumerate(arguments):
-        #     print(samples_b[isx])
-        #     run_thread(a)
+#         res = []
+#         for isx,a in enumerate(arguments):
+#             print(samples_b[isx])
+#             res.append(run_thread(a))
+# #             #sys.exit()
 
         # multithread
+
         res = pool.map(run_thread, arguments)
 
         if args.use_negated_probes:
@@ -534,14 +534,12 @@ def main(args, shuffle_data=True, model=None):
 
             # if no negated sentences in batch
             if all(s[0] == "" for s in sentences_b_negated):
-                res_negated = [(float("nan"), float("nan"), "")] * args.batch_size
+                res_negated = [(float('nan'), float('nan'), ""),]*args.batch_size
             # eval negated batch
             else:
-                (
-                    original_log_probs_list_negated,
-                    token_ids_list_negated,
-                    masked_indices_list_negated,
-                ) = model.get_batch_generation(sentences_b_negated, logger=logger)
+                original_log_probs_list_negated, token_ids_list_negated, masked_indices_list_negated = model.get_batch_generation(
+                    sentences_b_negated, logger=logger
+                )
                 if vocab_subset is not None:
                     # filter log_probs
                     filtered_log_probs_list_negated = model.filter_logprobs(
@@ -587,6 +585,7 @@ def main(args, shuffle_data=True, model=None):
             element["masked_indices"] = masked_indices_list[idx]
             element["label_index"] = label_index_list[idx]
             element["masked_topk"] = result_masked_topk
+            element["masked_topk"]['topk'] = result_masked_topk['topk'][0:10]
             element["sample_MRR"] = sample_MRR
             element["sample_Precision"] = sample_P
             element["sample_perplexity"] = sample_perplexity
@@ -604,7 +603,7 @@ def main(args, shuffle_data=True, model=None):
             # print()
 
             if args.use_negated_probes:
-                overlap, spearman, msg = res_negated[idx]
+                spearman, overlap, msg = res_negated[idx]
                 # sum overlap and spearmanr if not nan
                 if spearman == spearman:
                     element["spearmanr"] = spearman
@@ -665,8 +664,8 @@ def main(args, shuffle_data=True, model=None):
         msg += "\n"
         msg += "results negation:\n"
         msg += "all_negated_samples: {}\n".format(int(num_valid_negation))
-        msg += "global spearman rank affirmative/negated: {}\n".format(Spearman)
-        msg += "global overlap at 1 affirmative/negated: {}\n".format(Overlap)
+        msg += "global spearman rank affirmative/negated: {}\n".format(Overlap)
+        msg += "global overlap at 1 affirmative/negated: {}\n".format(Spearman)
 
     if samples_with_negative_judgement > 0 and samples_with_positive_judgement > 0:
         # Google-RE specific
@@ -690,7 +689,7 @@ def main(args, shuffle_data=True, model=None):
 
     # dump pickle with the result of the experiment
     all_results = dict(
-        list_of_results=list_of_results, global_MRR=MRR, global_P_at_10=Precision
+        list_of_results=list_of_results, global_MRR=MRR, global_P_at_10=Precision, global_P_at_1=Precision1, len_all_samples =len(all_samples)
     )
     with open("{}/result.pkl".format(log_directory), "wb") as f:
         pickle.dump(all_results, f)

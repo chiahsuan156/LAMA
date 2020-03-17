@@ -59,6 +59,34 @@ LMs = [
 ]
 
 
+
+
+
+LMs = [
+        {
+        "lm": "roberta",
+        "label": "roberta_base",
+        "models_names": ["roberta"],
+        "roberta_model_name": "model.pt",
+        "roberta_vocab_name":'vocab.txt',
+        "roberta_model_dir": "pre-trained_language_models/roberta/roberta.base",
+    },
+
+    {
+        "lm": "bert",
+        "label": "bert_base",
+        "models_names": ["bert"],
+        "bert_model_name": "bert-base-cased",
+        "bert_model_dir": None,
+    }
+    
+
+]
+
+
+
+
+
 def run_experiments(
     relations,
     data_path_pre,
@@ -88,6 +116,7 @@ def run_experiments(
                 data_path_pre, relation["relation"], data_path_post
             ),
             "common_vocab_filename": "pre-trained_language_models/common_vocab_cased.txt",
+            #"common_vocab_filename": "pre-trained_language_models/common_vocab_cased_unfiltered.txt",
             "template": "",
             "bert_vocab_name": "vocab.txt",
             "batch_size": 32,
@@ -106,6 +135,7 @@ def run_experiments(
             PARAMETERS["template"] = relation["template"]
             if use_negated_probes:
                 PARAMETERS["template_negated"] = relation["template_negated"]
+
 
         PARAMETERS.update(input_param)
         print(PARAMETERS)
@@ -129,7 +159,7 @@ def run_experiments(
         all_Precision1.append(Precision1)
 
         results_file.write(
-            "{},{}\n".format(relation["relation"], round(Precision1 * 100, 2))
+            "{},{},{}\n".format(input_param['label'],relation["relation"], round(Precision1 * 100, 2))
         )
         results_file.flush()
 
@@ -143,7 +173,6 @@ def run_experiments(
     results_file.close()
 
     for t, l in type_Precision1.items():
-
         print(
             "@@@ ",
             input_param["label"],
@@ -188,7 +217,7 @@ def get_GoogleRE_parameters():
 
 
 def get_ConceptNet_parameters(data_path_pre="data/"):
-    relations = [{"relation": "test"}]
+    relations = [{"relation": "test_c"}]
     data_path_pre += "ConceptNet/"
     data_path_post = ".jsonl"
     return relations, data_path_pre, data_path_post
@@ -217,11 +246,10 @@ if __name__ == "__main__":
     parameters = get_TREx_parameters()
     run_all_LMs(parameters)
 
-    print("3. ConceptNet")
-    parameters = get_ConceptNet_parameters()
-    run_all_LMs(parameters)
+#     print("3. ConceptNet")
+#     parameters = get_ConceptNet_parameters()
+#     run_all_LMs(parameters)
 
     print("4. SQuAD")
     parameters = get_Squad_parameters()
     run_all_LMs(parameters)
-
